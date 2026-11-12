@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zentra Pro</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(145deg, #1C1C1C, #1A1A1A);
+            color: white;
+            overflow-x: hidden;
+        }
+        .container {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .active {
+            display: flex;
+        }
+        .otp-screen, .home, .smart-pay, .gold-vault, .profile {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(145deg, #00FFFF, #FFD700);
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        .notification {
+            display: none;
+            background-color: green;
+            padding: 10px;
+            border-radius: 5px;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 1000;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+        }
+        .bottom-nav div {
+            text-align: center;
+            cursor: pointer;
+        }
+        .bottom-nav div:hover {
+            transform: scale(1.1);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .grid-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .ledger {
+            margin-top: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .ledger-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .status-green {
+            color: green;
+        }
+        .status-red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification" id="otpNotification"></div>
+    <div class="container" id="appContainer">
+        <div class="otp-screen active" id="otpScreen">
+            <h2>Welcome to Zentra Pro</h2>
+            <input type="text" id="fullName" placeholder="Full Name" required>
+            <input type="text" id="mobileNumber" placeholder="10-digit Mobile Number" required>
+            <button id="getOtpBtn">Get WhatsApp OTP</button>
+        </div>
+        <div class="home" id="home">
+            <h2>Home</h2>
+            <div class="card">
+                <div>Cash Balance</div>
+                <div id="cashBalance">₹25,000</div>
+            </div>
+            <div class="card">
+                <div>Gold Saved</div>
+                <div id="goldSaved">0g</div>
+            </div>
+            <div class="card">
+                <div>Total Transactions</div>
+                <div id="totalTransactions">0</div>
+            </div>
+            <div class="grid">
+                <div class="grid-item" id="sendMoney">Send Money</div>
+                <div class="grid-item" id="addCash">Add Cash</div>
+                <div class="grid-item" id="mobileRecharge">Mobile Recharge</div>
+                <div class="grid-item" id="electricityBill">Electricity Bill</div>
+                <div class="grid-item" id="spinWin">Daily Spin & Win</div>
+                <div class="grid-item" id="scanPay">Scan & Pay</div>
+            </div>
+        </div>
+        <div class="smart-pay" id="smartPay">
+            <h2>Smart Pay</h2>
+            <input type="text" id="recipient" placeholder="Recipient Name/Number" required>
+            <input type="number" id="amount" placeholder="Amount" required>
+            <button id="payBtn">Pay</button>
+        </div>
+        <div class="gold-vault" id="goldVault">
+            <h2>Gold Vault</h2>
+            <div class="card">24K Pure Gold: ₹79,850/10g</div>
+            <div class="card">22K Standard Gold: ₹73,200/10g</div>
+            <div class="card">999 Pure Silver: ₹94,500/kg</div>
+            <div class="card">Digital Platinum</div>
+            <button id="buyGold">Buy Gold</button>
+            <button id="sellGold">Sell Gold</button>
+        </div>
+        <div class="profile" id="profile">
+            <h2>My Profile</h2>
+            <div class="card" id="userProfile">
+                <div>User Avatar</div>
+                <div id="userName">Full Name</div>
+                <div id="userMobile">Mobile Number</div>
+                <div id="joinDate">Member Since</div>
+                <div id="kycVerified">KYC Verified</div>
+            </div>
+            <div class="ledger" id="transactionHistory"></div>
+            <button id="logoutBtn">Log Out</button>
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <div id="tabHome">🏠</div>
+        <div id="tabSmartPay">💳</div>
+        <div id="tabGoldVault">🪙</div>
+        <div id="tabProfile">👤</div>
+    </div>
+    <script>
+        const appContainer = document.getElementById('appContainer');
+        const otpScreen = document.getElementById('otpScreen');
+        const home = document.getElementById('home');
+        const smartPay = document.getElementById('smartPay');
+        const goldVault = document.getElementById('goldVault');
+        const profile = document.getElementById('profile');
+        const otpNotification = document.getElementById('otpNotification');
+
+        document.getElementById('getOtpBtn').onclick = function() {
+            const fullName = document.getElementById('fullName').value;
+            const mobileNumber = document.getElementById('mobileNumber').value;
+            if (fullName && mobileNumber.length === 10) {
+                const otp = Math.floor(1000 + Math.random() * 9000);
+                otpNotification.innerText = `Your OTP is: ${otp}`;
+                otpNotification.style.display = 'block';
+                setTimeout(() => otpNotification.style.display = 'none', 3000);
+
+                // Save user profile
+                const userProfile = {
+                    FullName: fullName,
+                    MobileNumber: mobileNumber,
+                    JoinDate: new Date().toLocaleDateString(),
+                    KYCVerified: true
+                };
+                localStorage.setItem('userProfile', JSON.stringify(userProfile));
+                localStorage.setItem('cashBalance', JSON.stringify({ amount: 25000 }));
+                localStorage.setItem('goldGrams', JSON.stringify({ amount: 0 }));
+                localStorage.setItem('transactionHistory', JSON.stringify([]));
+                localStorage.setItem('totalTransactionsCount', JSON.stringify({ count: 0 }));
+                localStorage.setItem('totalBonusWon', JSON.stringify({ amount: 0 }));
+                localStorage.setItem('totalGoldPortfolioValue', JSON.stringify({ amount: 0 }));
+
+                setTimeout(() => {
+                    otpScreen.classList.remove('active');
+                    home.classList.add('active');
+                    updateHome();
+                }, 3000);
+            }
+        };
+
+        function updateHome() {
+            const cashBalance = JSON.parse(localStorage.getItem('cashBalance')).amount;
+            const goldGrams = JSON.parse(localStorage.getItem('goldGrams')).amount;
+            const totalTransactions = JSON.parse(localStorage.getItem('totalTransactionsCount')).count;
+
+            document.getElementById('cashBalance').innerText = `₹${cashBalance}`;
+            document.getElementById('goldSaved').innerText = `${goldGrams}g`;
+            document.getElementById('totalTransactions').innerText = totalTransactions;
+        }
+
+        document.getElementById('tabHome').onclick = function() {
+            home.classList.add('active');
+            smartPay.classList.remove('active');
+            goldVault.classList.remove('active');
+            profile.classList.remove('active');
+        };
+
+        document.getElementById('tabSmartPay').onclick = function() {
+            home.classList.remove('active');
+            smartPay.classList.add('active');
+            goldVault.classList.remove('active');
+            profile.classList.remove('active');
+        };
+
+        document.getElementById('tabGoldVault').onclick = function() {
+            home.classList.remove('active');
+            smartPay.classList.remove('active');
+            goldVault.classList.add('active');
+            profile.classList.remove('active');
+        };
+
+        document.getElementById('tabProfile').onclick = function() {
+            home.classList.remove('active');
+            smartPay.classList.remove('active');
+            goldVault.classList.remove('active');
+            profile.classList.add('active');
+            loadProfile();
+        };
+
+        function loadProfile() {
+            const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+            document.getElementById('userName').innerText = userProfile.FullName;
+            document.getElementById('userMobile').innerText = userProfile.MobileNumber;
+            document.getElementById('joinDate').innerText = userProfile.JoinDate;
+            document.getElementById('kycVerified').innerText = userProfile.KYCVerified ? '✅ KYC Verified' : '❌ KYC Not Verified';
+
+            const transactionHistory = JSON.parse(localStorage.getItem('transactionHistory'));
+            const ledger = document.getElementById('transactionHistory');
+            ledger.innerHTML = '';
+            transactionHistory.forEach(transaction => {
+                const item = document.createElement('div');
+                item.className = 'ledger-item';
+                item.innerHTML = `<span>${transaction.timestamp}</span> <span class="${transaction.status === 'success' ? 'status-green' : 'status-red'}">${transaction.type}: ₹${transaction.amount}</span>`;
+                ledger.appendChild(item);
+            });
+        }
+
+        document.getElementById('payBtn').onclick = function() {
+            const recipient = document.getElementById('recipient').value;
+            const amount = document.getElementById('amount').value;
+            if (recipient && amount) {
+                const transaction = {
+                    transactionId: Date.now(),
+                    type: 'Payment',
+                    amount: amount,
+                    timestamp: new Date().toLocaleString(),
+                    status: 'success'
+                };
+                updateTransactionHistory(transaction);
+                otpNotification.innerText = `Payment of ₹${amount} to ${recipient} successful!`;
+                otpNotification.style.display = 'block';
+                setTimeout(() => otpNotification.style.display = 'none', 3000);
+                updateHome();
+            }
+        };
+
+        function updateTransactionHistory(transaction) {
+            const transactionHistory = JSON.parse(localStorage.getItem('transactionHistory'));
+            transactionHistory.push(transaction);
+            localStorage.setItem('transactionHistory', JSON.stringify(transactionHistory));
+
+            const totalTransactions = JSON.parse(localStorage.getItem('totalTransactionsCount'));
+            totalTransactions.count += 1;
+            localStorage.setItem('totalTransactionsCount', JSON.stringify(totalTransactions));
+        }
+
+        document.getElementById('buyGold').onclick = function() {
+            const goldPrice = 79850; // price per 10g
+            const amount = prompt("Enter amount to buy (in grams):");
+            if (amount) {
+                const totalCost = (goldPrice / 10) * amount;
+                const cashBalance = JSON.parse(localStorage.getItem('cashBalance')).amount;
+                if (cashBalance >= totalCost) {
+                    const transaction = {
+                        transactionId: Date.now(),
+                        type: 'Buy Gold',
+                        amount: totalCost,
+                        timestamp: new Date().toLocaleString(),
+                        status: 'success'
+                    };
+                    updateTransactionHistory(transaction);
+                    let goldGrams = JSON.parse(localStorage.getItem('goldGrams')).amount;
+                    goldGrams += parseFloat(amount);
+                    localStorage.setItem('goldGrams', JSON.stringify({ amount: goldGrams }));
+                    localStorage.setItem('cashBalance', JSON.stringify({ amount: cashBalance - totalCost }));
+                    updateHome();
+                } else {
+                    alert("Insufficient balance!");
+                }
+            }
+        };
+
+        document.getElementById('sellGold').onclick = function() {
+            const goldPrice = 79850; // price per 10g
+            const amount = prompt("Enter amount to sell (in grams):");
+            if (amount) {
+                let goldGrams = JSON.parse(localStorage.getItem('goldGrams')).amount;
+                if (goldGrams >= amount) {
+                    const totalEarnings = (goldPrice / 10) * amount;
+                    const transaction = {
+                        transactionId: Date.now(),
+                        type: 'Sell Gold',
+                        amount: totalEarnings,
+                        timestamp: new Date().toLocaleString(),
+                        status: 'success'
+                    };
+                    updateTransactionHistory(transaction);
+                    goldGrams -= parseFloat(amount);
+                    localStorage.setItem('goldGrams', JSON.stringify({ amount: goldGrams }));
+                    let cashBalance = JSON.parse(localStorage.getItem('cashBalance')).amount;
+                    localStorage.setItem('cashBalance', JSON.stringify({ amount: cashBalance + totalEarnings }));
+                    updateHome();
+                } else {
+                    alert("Insufficient gold!");
+                }
+            }
+        };
+
+        document.getElementById('logoutBtn').onclick = function() {
+            localStorage.clear();
+            otpScreen.classList.add('active');
+            home.classList.remove('active');
+            smartPay.classList.remove('active');
+            goldVault.classList.remove('active');
+            profile.classList.remove('active');
+        };
+    </script>
+</body>
+</html>
